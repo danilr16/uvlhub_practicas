@@ -5,8 +5,12 @@ services:
     image: <your_dockerhub_name>/uvlhub:latest
     env_file:
       - ../.env
-    ports:
-      - "5000:5000"
+    # Not published to the host: nginx is the only thing that talks to the app,
+    # and it does so over the compose network. Publishing 5000 would let anyone
+    # reach the application bypassing the proxy -- and, in the SSL stack, would
+    # serve it in plain HTTP alongside the TLS listener.
+    expose:
+      - "5000"
     depends_on:
       - db
     restart: always
@@ -24,8 +28,8 @@ services:
     image: mariadb:12.0.2
     command: --default-authentication-plugin=mysql_native_password
     restart: always
-    ports:
-      - "3306:3306"
+    # Reachable from the other containers by service name; deliberately not
+    # published to the host, which would expose the database to the network.
     volumes:
       - db_data:/var/lib/mysql
 

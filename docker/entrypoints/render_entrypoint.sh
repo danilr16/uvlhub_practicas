@@ -15,6 +15,12 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+# Wait for the database to be ready by running a script.
+# The database on Render is external and reached over the network, so it is more
+# likely to be slow to answer than a sibling container, not less. Without this
+# the first mariadb call below fails and "set -e" kills the container on boot.
+sh ./scripts/wait-for-db.sh
+
 # Initialize migrations only if the migrations directory doesn't exist
 if [ ! -d "migrations/versions" ]; then
     # Initialize the migration repository
