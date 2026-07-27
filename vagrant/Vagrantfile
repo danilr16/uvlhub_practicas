@@ -34,8 +34,9 @@ end
 
 Vagrant.configure("2") do |config|
 
-  # Choose a base box
-  config.vm.box = "ubuntu/jammy64"
+  # Choose a base box. Ubuntu 24.04 (noble), matching the ubuntu-24.04 runners
+  # every CI and CD workflow pins.
+  config.vm.box = "ubuntu/noble64"
 
   # Network configuration
   config.vm.network "forwarded_port", guest: 5000, host: 5000
