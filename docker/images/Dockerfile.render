@@ -1,20 +1,47 @@
-# Use an official Python runtime as a parent image, Alpine version for a lighter footprint
+# Image for deploying on Render.com, built in two stages.
+#
+# Only one dependency compiles from source (python-sat); everything else in
+# requirements.txt arrives as a wheel. The toolchain that builds it weighs
+# hundreds of megabytes and has no business in the deployed image, so it lives
+# in a stage that is thrown away.
+
+# --------------------------------------------------------------- build stage --
+FROM python:3.13-slim AS builder
+
+ENV PIP_ROOT_USER_ACTION=ignore
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential gcc libc-dev python3-dev libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install into a virtualenv so the runtime stage copies one self-contained
+# directory instead of picking pieces out of the system site-packages.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# ------------------------------------------------------------- runtime stage --
 FROM python:3.13-slim
 
-# Install necessary packages
+ENV PIP_ROOT_USER_ACTION=ignore
+
+# mariadb-client is what scripts/wait-for-db.sh and the entrypoint call. bash
+# and libstdc++, which python-sat's extension links against, already ship in
+# the base image.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends mariadb-client \
-    && apt-get install -y --no-install-recommends gcc libc-dev python3-dev libffi-dev \
-    && apt-get install -y --no-install-recommends curl \
-    && apt-get install -y --no-install-recommends bash \
-    && apt-get install -y --no-install-recommends build-essential 
-
-# Clean up
-RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Set the working directory in the container to /workspace
 WORKDIR /workspace
+ENV PYTHONPATH=/workspace
 
 # Copy files
 COPY app/ ./app
@@ -31,19 +58,9 @@ COPY requirements.txt .
 RUN find . -type d -name "__pycache__" -exec rm -r {} + && \
     find . -type f -name "*.pyc" -exec rm -f {} +
 
-# Copy entrypoint and set execution permissions
-COPY docker/entrypoints/render_entrypoint.sh /workspace/render_entrypoint.sh
-RUN chmod +x /workspace/render_entrypoint.sh
-
-# Copy the wait-for-db.sh script and set execution permissions
-COPY scripts/wait-for-db.sh /workspace/scripts/wait-for-db.sh
-RUN chmod +x /workspace/scripts/wait-for-db.sh
-
-# Update pip
-RUN pip install --no-cache-dir --upgrade pip
-
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
+# Copy entrypoint and the script it waits on, both executable
+COPY --chmod=0755 docker/entrypoints/render_entrypoint.sh /workspace/render_entrypoint.sh
+COPY --chmod=0755 scripts/wait-for-db.sh /workspace/scripts/wait-for-db.sh
 
 # Expose port 80
 EXPOSE 80

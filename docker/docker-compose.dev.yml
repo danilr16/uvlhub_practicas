@@ -14,7 +14,12 @@ services:
     volumes:
       - ../:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
-    command: [ "sh", "-c", "sh /workspace/docker/entrypoints/development_entrypoint.sh" ]
+    # Run the entrypoint as PID 1 (no "sh -c" wrapper), so its final "exec"
+    # replaces it and the application itself receives SIGTERM. Wrapped, PID 1
+    # was a shell that never execs and never forwards the signal: docker stop
+    # waited out the grace period and killed the app instead of letting it
+    # shut down cleanly.
+    command: [ "sh", "/workspace/docker/entrypoints/development_entrypoint.sh" ]
     networks:
       - uvlhub_network
 

@@ -19,7 +19,12 @@ services:
       - ../scripts:/workspace/scripts
       - ../migrations:/workspace/migrations
       - ../uploads:/workspace/uploads
-    command: [ "sh", "-c", "sh /workspace/entrypoint.sh" ]
+    # Run the entrypoint as PID 1 (no "sh -c" wrapper), so its final "exec"
+    # replaces it and the application itself receives SIGTERM. Wrapped, PID 1
+    # was a shell that never execs and never forwards the signal: docker stop
+    # waited out the grace period and killed the app instead of letting it
+    # shut down cleanly.
+    command: [ "sh", "/workspace/entrypoint.sh" ]
 
   db:
     container_name: mariadb_container
