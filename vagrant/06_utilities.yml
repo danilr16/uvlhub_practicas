@@ -11,5 +11,6 @@
         create: yes
       with_items:
         - 'source {{ working_dir }}vagrant_venv/bin/activate'
+        - 'export PYTHONPATH={{ working_dir }}'
         - 'cd {{ working_dir }}'
       when: ansible_user == 'vagrant'

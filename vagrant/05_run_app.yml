@@ -20,6 +20,8 @@
 
     - name: Set database with Rosemary
       shell: |
+        set -e
+        export PYTHONPATH={{ working_dir }}
         source {{ working_dir }}vagrant_venv/bin/activate
         cd {{ working_dir }}
         flask db upgrade
@@ -30,6 +32,8 @@
 
     - name: Run Flask application
       shell: |
+        set -e
+        export PYTHONPATH={{ working_dir }}
         source {{ working_dir }}vagrant_venv/bin/activate
         cd {{ working_dir }}
         nohup flask run --host=0.0.0.0 --port=5000 --reload --debug > app.log 2>&1 &
