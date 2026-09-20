@@ -92,4 +92,5 @@ def feature_create(name: str) -> None:
             _own(p)
             os.chmod(p, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 
-    click.echo(click.style(f"Feature '{name}' permissions changed successfully.", fg="green"))
+    ownership = "" if give_away else " (ownership left as is)"
+    click.echo(click.style(f"Feature '{name}' permissions changed successfully.{ownership}", fg="green"))

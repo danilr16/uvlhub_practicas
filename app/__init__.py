@@ -52,19 +52,22 @@ def _apply_database_port(app: Flask) -> None:
     deployment, is then reachable by ``scripts/wait-for-db.sh`` and the
     entrypoints, which pass ``-P $MARIADB_PORT``, and unreachable by the
     application, which fails at ``flask db upgrade`` with ``Can't connect to
-    MySQL server on '<host>:3306'``. Rewrite the port here so every command
-    reads the same variable.
+    MySQL server on '<host>' ([Errno 111] Connection refused)``. Rewrite the
+    port here so every command reads the same variable. Only a MySQL/MariaDB
+    URI with a host is touched: the variable means nothing to SQLite.
     """
     port = os.getenv("MARIADB_PORT")
     uri = app.config.get("SQLALCHEMY_DATABASE_URI")
     if not port or not uri:
         return
+    url = make_url(uri)
+    if not url.host or not url.drivername.startswith("mysql"):
+        return
     try:
         port_number = int(port)
     except ValueError as exc:
         raise RuntimeError(f"MARIADB_PORT must be an integer, got {port!r}") from exc
-    url = make_url(uri).set(port=port_number)
-    app.config["SQLALCHEMY_DATABASE_URI"] = url.render_as_string(hide_password=False)
+    app.config["SQLALCHEMY_DATABASE_URI"] = url.set(port=port_number).render_as_string(hide_password=False)
 
 
 def _setup_jinja_globals(app: Flask) -> None:
