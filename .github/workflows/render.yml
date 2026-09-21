@@ -2,16 +2,16 @@ name: Deploy to Render
 
 on:
     push:
-      branches:
-        - main
-    pull_request:
-      branches:
-        - main
+      tags:
+        - 'v*'
 
 jobs:
+  run-tests:
+    uses: ./.github/workflows/CI_pytest.yml
 
   deploy:
     name: Deploy to Render
+    needs: run-tests
     runs-on: ubuntu-24.04
     steps:
       - name: Check out the repo
