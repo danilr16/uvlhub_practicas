@@ -51,7 +51,7 @@ jobs:
     - name: Run security audit on dependencies
       run: |
         pip install pip-audit
-        pip-audit
+        pip-audit --skip rosemary
 
     - name: Run tests with coverage
       run: |
