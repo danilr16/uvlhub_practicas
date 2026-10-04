@@ -2,7 +2,7 @@ from flask import Flask
 from splent_framework.assets.asset_registry import register_asset
 from splent_framework.blueprints.base_blueprint import BaseBlueprint
 
-notepad_bp = BaseBlueprint('notepad', __name__, template_folder='templates')
+notepad_bp = BaseBlueprint("notepad", __name__, template_folder="templates")
 
 
 def init_feature(app: Flask) -> None:

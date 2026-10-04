@@ -4,6 +4,7 @@ These exercise services and repositories against a real database, without
 going through the HTTP layer. Use the ``test_app`` fixture (provides an app
 context + reset DB) from splent_framework.
 """
+
 import pytest
 
 from app.features.auth.repositories import UserRepository
